@@ -1,0 +1,62 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-3.3.7/css/bootstrap.css' %}">
+    <title>download git repo</title>
+    <style>
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: black;
+            opacity: 0.3;
+        }
+
+        #loading-icon {
+            width: 100px;
+            height: 30px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: -15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div>
+        <p>输入远程仓库地址，本地保存目录将与远程目录相</p>
+    </div>
+    <input name='repo_addr' id='repo_addr' placeholder='请输入repository地址'/>
+    <button class="btn btn-success" onclick="download_repo();">下载</button>
+</div>
+</body>
+<div id="loading" class="loading hidden">
+    <div id="loading-icon">
+        <img src="{% static 'images/loading.gif' %}">
+    </div>
+</div>
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script>
+    function download_repo() {
+        let repo_addr = $("#repo_addr").val();
+         $("#loading").removeClass('hidden');
+        $.ajax({
+            url: '/fetch/',
+            type: 'POST',
+            data: {repo_addr: repo_addr},
+            success: function (response) {
+                $("#loading").addClass('hidden');
+            },
+            error: function (resposne) {
+                $("#loading").addClass('hidden');
+            }
+        })
+    }
+</script>
+</html>
