@@ -1,0 +1,58 @@
+{% extends 'web/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Env</title>
+</head>
+<body>
+{% block content %}
+    <div class="col-md-12">
+        <p class="">
+            <a href="{% url 'web:project_env_add_edit' %}">
+                <button type="button" class="btn btn-primary">添加项目环境</button>
+            </a>
+        </p>
+        <p>
+        <h3 class="text-center">项目环境列表</h3>
+        </p>
+        <table class="table table-bordered table-striped table-hover">
+            <!-- On rows -->
+            <thead>
+            <tr>
+                <td class="success">编号</td>
+                <td class="info">所属项目</td>
+                <td class="success">环境</td>
+                <td class="info">路径</td>
+                <td class="success">服务器</td>
+                <td class="info">操作</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tbody>
+            {% for project_env in project_envs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ project_env.project }}</td>
+                    <td>{{ project_env.get_env_display }}</td>
+                    <td>{{ project_env.path }}</td>
+                    <td>{% for server in project_env.servers.all %}{{ server }}{% endfor %}</td>
+
+                    <td>
+                        <a style="color: #333333;" href="{% url 'web:project_env_add_edit' project_env.id %}">
+                            <i class="fa fa-edit" aria-hidden="true"></i></a>
+                        |
+                        <a style="color: #d9534f;" href="{% url 'web:project_env_delete' project_env.id %}"><i
+                                class="fa fa-trash-o"></i></a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </tbody>
+        </table>
+
+    </div>
+
+{% endblock content %}
+</body>
+</html>

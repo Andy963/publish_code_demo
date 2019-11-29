@@ -1,0 +1,9 @@
+{% extends 'web/base.html' %}
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="id_project_env">Project Env</label>
+        {{ project_env_form }}
+        <input type="submit" value="提交">
+    </form>
+{% endblock content %}

@@ -1,0 +1,52 @@
+{% extends 'web/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Server</title>
+</head>
+<body>
+{% block content %}
+    <div class="col-md-12">
+        <p class="">
+            <a href="{% url 'web:server' %}">
+                <button type="button" class="btn btn-primary">添加服务器</button>
+            </a>
+        </p>
+        <p>
+        <h3 class="text-center">服务器列表</h3>
+        </p>
+        <table class="table table-bordered table-striped table-hover">
+            <!-- On rows -->
+            <thead>
+            <tr>
+                <td class="success">编号</td>
+                <td class="info">服务器名称</td>
+                <td class="success">操作</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tbody>
+            {% for server in servers %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ server.hostname }}</td>
+
+                    <td>
+                        <a style="color: #333333;" href="{% url 'web:server' server.id %}">
+                            <i class="fa fa-edit" aria-hidden="true"></i></a>
+                        |
+                        <a style="color: #d9534f;" href="{% url 'web:server_delete' server.id %}"><i
+                                class="fa fa-trash-o"></i></a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </tbody>
+        </table>
+
+    </div>
+
+{% endblock content %}
+</body>
+</html>

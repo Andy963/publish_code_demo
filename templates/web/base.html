@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>代码发布系统</title>
+    {% endblock title %}
+</head>
+<link rel="stylesheet" href="{% static 'plugins/bootstrap-3.3.7/css/bootstrap.css' %}">
+<link rel="stylesheet" href="{% static 'plugins/font-awesome-4.7.0/css/font-awesome.css' %}">
+{% block custom_css %}
+{% endblock custom_css %}
+<body>
+<nav class="navbar navbar-inverse  navbar-fixed-top">
+    <div class="container">
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="">Home</a></li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div>
+</nav>
+<div class="container">
+    <div class="row tip text-center">
+        {% block tips %}
+            <h3>Code publish</h3>
+        {% endblock tips %}
+    </div>
+    {% block content %}
+
+    {% endblock content %}
+
+</div>
+</body>
+<script type="text/javascript" src="{% static 'js/jquery-3.4.1.js' %}"></script>
+<script type="text/javascript" src="{% static 'plugins/bootstrap-3.3.7/js/bootstrap.js' %}"></script>
+{% block custom_js %}
+{% endblock custom_js %}
+</html>

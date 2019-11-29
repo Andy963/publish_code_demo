@@ -1,0 +1,55 @@
+{% extends 'web/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RSA</title>
+</head>
+<body>
+{% block content %}
+    <div class="col-md-12">
+        <p class="">
+            <a href="{% url 'web:rsa_add_edit' %}">
+                <button type="button" class="btn btn-primary">添加密钥</button>
+            </a>
+        </p>
+        <p>
+        <h3 class="text-center">密钥器列表</h3>
+        </p>
+        <table class="table table-bordered table-striped table-hover">
+            <!-- On rows -->
+            <thead>
+            <tr>
+                <td class="success">编号</td>
+                <td class="info">状态</td>
+                <td class="success">密钥</td>
+                <td class="info">操作</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tbody>
+            {% for rsa in rsas %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ rsa.get_status_display }}</td>
+                    <td>{{ rsa.private_key }}</td>
+
+                    <td>
+                        <a style="color: #333333;" href="{% url 'web:rsa_add_edit' rsa.id %}">
+                            <i class="fa fa-edit" aria-hidden="true"></i></a>
+                        |
+                        <a style="color: #d9534f;" href="{% url 'web:rsa_delete' rsa.id %}"><i
+                                class="fa fa-trash-o"></i></a>
+
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </tbody>
+        </table>
+
+    </div>
+
+{% endblock content %}
+</body>
+</html>
