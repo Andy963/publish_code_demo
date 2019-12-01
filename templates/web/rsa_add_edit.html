@@ -2,8 +2,7 @@
 {% block content %}
     <form method="post">
         {% csrf_token %}
-        <label for="id_rsa">RSA</label>
         {{ rsa_form }}
-        <input type="submit" value="提交">
+        <input type="submit" class="btn btn-success" value="提交">
     </form>
 {% endblock content %}

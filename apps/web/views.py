@@ -1,7 +1,10 @@
 import os
+import copy
 import shutil
+import uuid
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.views import View
 
@@ -9,6 +12,8 @@ from utils.repository import GitRepository
 from utils.ssh import SSHProxy
 from apps.web import models
 from apps.web import forms
+from utils import custom_paginator
+from utils.response import BaseResponse
 
 
 # Create your views here.
@@ -40,44 +45,41 @@ def home(request):
 
 
 def rsa(request):
-    rsas = models.Rsa.objects.all()
-    context = {
-        'rsas': rsas,
-    }
+    # 获取所有私钥列表
+    try:
+        rsas = models.Rsa.objects.all()
+        request_data = copy.copy(request.GET)
+        cur_page_num = request.GET.get('page')
+        total_count = rsas.count()
+        obj_per_page = settings.PER_PAGE_COUNT
+        page_tab_num = settings.PAGE_NUMBER_SHOW
+        page_obj = custom_paginator.CustomPage(cur_page_num, total_count, obj_per_page, page_tab_num,
+                                               request_data)
+        rsa_list = rsas[page_obj.start_data_number:page_obj.end_data_number]
+        page_html = page_obj.page_html_func()
+        context = {
+            'rsas': rsa_list,
+            'page_html': page_html,
+        }
+    except ConnectionError:
+        return render(request, '404.html')
+
     return render(request, 'web/rsa.html', context)
 
 
 def rsa_delete(request, pk):
-    rsa_obj = models.Rsa.objects.filter(pk=pk).first()
-    rsa_obj.delete()
+    models.Rsa.objects.filter(pk=pk).delete()
     return redirect('web:rsa_list')
 
 
-def rsa_add_edit(request, pk=None):
+def rsa_add(request):
+    # 添加rsa
     if request.method == 'GET':
-        # 编辑rsa
-        if pk:
-            rsa_obj = models.Rsa.objects.filter(pk=pk).first()
-            rsa_form = forms.RsaForm(instance=rsa_obj)
-            context = {'rsa_form': rsa_form}
-            return render(request, 'web/rsa_add_edit.html', context)
-
         # 添加rsa
         rsa_form = forms.RsaForm()
         context = {'rsa_form': rsa_form}
         return render(request, 'web/rsa_add_edit.html', context)
     else:
-        # 提交编辑
-        if pk:
-            rsa_obj = models.Rsa.objects.filter(pk=pk).first()
-            rsa_form = forms.RsaForm(instance=rsa_obj, data=request.POST)
-            if rsa_form.is_valid():
-                rsa_form.save()
-                return redirect('web:rsa_list')
-            context = {'rsa_form': rsa_form}
-            return render(request, 'web/rsa_add_edit.html', context)
-
-        # 提交添加rsa
         rsa_form = forms.RsaForm(data=request.POST)
         if rsa_form.is_valid():
             rsa_form.save()
@@ -86,55 +88,81 @@ def rsa_add_edit(request, pk=None):
         return render(request, 'web/rsa_add_edit.html', context)
 
 
-class ServerAddEdit(View):
-    def get(self, request, pk=None):
-        # 有id时为编辑服务器
-        if pk:
-            server = models.Server.objects.filter(pk=pk).first()
-            server_form = forms.ServerForm(instance=server)
-            context = {
-                'server_form': server_form,
-            }
-            return render(request, 'web/server_edit.html', context)
-        # 添加服务器
-        server_form = forms.ServerForm()
+def rsa_edit(request, pk):
+    # 编辑rsa
+    if request.method == 'GET':
+        rsa_obj = models.Rsa.objects.filter(pk=pk).first()
+        rsa_form = forms.RsaForm(instance=rsa_obj)
+        context = {'rsa_form': rsa_form}
+        return render(request, 'web/rsa_add_edit.html', context)
+    else:
+        rsa_obj = models.Rsa.objects.filter(pk=pk).first()
+        rsa_form = forms.RsaForm(instance=rsa_obj, data=request.POST)
+        if rsa_form.is_valid():
+            rsa_form.save()
+            return redirect('web:rsa_list')
+        context = {'rsa_form': rsa_form}
+        return render(request, 'web/rsa_add_edit.html', context)
+
+
+def server(request):
+    # 服务器列表
+    try:
+        servers = models.Server.objects.all()
+        request_data = copy.copy(request.GET)
+        cur_page_num = request.GET.get('page')
+        total_count = servers.count()
+        obj_per_page = settings.PER_PAGE_COUNT
+        page_tab_num = settings.PAGE_NUMBER_SHOW
+        page_obj = custom_paginator.CustomPage(cur_page_num, total_count, obj_per_page, page_tab_num,
+                                               request_data)
+        servers = servers[page_obj.start_data_number:page_obj.end_data_number]
+        page_html = page_obj.page_html_func()
         context = {
-            'server_form': server_form,
+            'servers': servers,
+            'page_html': page_html,
         }
-        return render(request, 'web/server_add_edit.html', context)
+    except ConnectionError:
+        return render(request, '404.html')
 
-    def post(self, request, pk=None):
-        # 有Pk是编辑的提交
-        if pk:
-            server = models.Server.objects.filter(pk=pk).first()
-            server_form = forms.ServerForm(data=request.POST, instance=server)
-            if server_form.is_valid():
-                server_form.save()
-                return redirect('web:server_list')
-            context = {'server_form': server_form}
-            return render(request, 'web/server_edit.html', context)
-
-        # 没有pk值，添加服务器的提交
-        server_form = forms.ServerForm(data=request.POST)
-        if server_form.is_valid():
-            server_form.save()
-            return redirect('web:server_list')
-        context = {'server_form': server_form}
-        return render(request, 'web/server_add_edit.html', context)
-
-
-def server_list(request):
-    servers = models.Server.objects.all()
-    context = {
-        'servers': servers,
-    }
     return render(request, 'web/server.html', context)
 
 
 def server_delete(request, pk):
-    server = models.Server.objects.filter(pk=pk).first()
-    server.delete()
+    models.Server.objects.filter(pk=pk).delete()
     return redirect('web:server_list')
+
+
+def server_add(request):
+    # 添加server
+    if request.method == 'GET':
+
+        server_form = forms.ServerForm()
+        context = {'form': server_form}
+        return render(request, 'web/add_edit_form.html', context)
+    else:
+        server_form = forms.ServerForm(data=request.POST)
+        if server_form.is_valid():
+            server_form.save()
+            return redirect('web:server')
+        context = {'form': server_form}
+        return render(request, 'web/add_edit_form.html', context)
+
+
+def server_edit(request, pk):
+    # 编辑server
+    server_obj = models.Server.objects.filter(pk=pk).first()
+    if request.method == 'GET':
+        server_form = forms.ServerForm(instance=server_obj)
+        context = {'form': server_form}
+        return render(request, 'web/add_edit_form.html', context)
+    else:
+        server_form = forms.ServerForm(instance=server_obj, data=request.POST)
+        if server_form.is_valid():
+            server_form.save()
+            return redirect('web:server')
+        context = {'form': server_form}
+        return render(request, 'web/add_edit_form.html', context)
 
 
 def project(request):
@@ -148,38 +176,38 @@ def project(request):
 def project_delete(request, pk):
     project_obj = models.Project.objects.filter(pk=pk).first()
     project_obj.delete()
-    return redirect('web:project_list')
+    return redirect('web:project')
 
 
-def project_add_edit(request, pk=None):
+def project_add(request):
     if request.method == 'GET':
-        # 有pk时为编辑
-        if pk:
-            project_obj = models.Project.objects.filter(pk=pk).first()
-            project_form = forms.ProjectForm(instance=project_obj)
-            context = {'project_form': project_form}
-            return render(request, 'web/project_add_edit.html', context)
-
-        # 没有Pk 添加项目
         project_form = forms.ProjectForm()
-        context = {'project_form': project_form}
-        return render(request, 'web/project_add_edit.html', context)
+        context = {'form': project_form}
+        return render(request, 'web/add_edit_form.html', context)
     else:
-        # 编辑
-        if pk:
-            project_obj = models.Project.objects.filter(pk=pk).first()
-            project_form = forms.ProjectForm(instance=project_obj, data=request.POST)
-            if project_form.is_valid():
-                project_form.save()
-                return redirect('web:project_list')
-            context = {"project_form": project_form}
-            return render(request, 'web/project_add_edit.html', context)
         project_form = forms.ProjectForm(data=request.POST)
         if project_form.is_valid():
             project_form.save()
-            return redirect('web:project_list')
-        context = {'project_form': project_form}
-        return render(request, 'web/project_add_edit.html', context)
+            return redirect('web:project')
+        context = {'form': project_form}
+        return render(request, 'web/add_edit_form.html', context)
+
+
+def project_edit(request, pk):
+    if request.method == 'GET':
+
+        project_obj = models.Project.objects.filter(pk=pk).first()
+        project_form = forms.ProjectForm(instance=project_obj)
+        context = {'form': project_form}
+        return render(request, 'web/add_edit_form.html', context)
+    else:
+        project_obj = models.Project.objects.filter(pk=pk).first()
+        project_form = forms.ProjectForm(instance=project_obj, data=request.POST)
+        if project_form.is_valid():
+            project_form.save()
+            return redirect('web:project')
+        context = {"form": project_form}
+        return render(request, 'web/add_edit_form.html', context)
 
 
 def project_env(request):
@@ -191,41 +219,148 @@ def project_env(request):
 def project_env_delete(request, pk):
     project_env_obj = models.ProjectEnv.objects.filter(pk=pk).first()
     project_env_obj.delete()
-    return redirect('web:project_env_list')
+    return redirect('web:project_env')
 
 
-def project_env_add_edit(request, pk=None):
+def project_env_add(request):
     if request.method == 'GET':
-        # 编辑project_env
-        if pk:
-            project_env_obj = models.ProjectEnv.objects.filter(pk=pk).first()
-            project_env_form = forms.ProjectEnvForm(instance=project_env_obj)
-            context = {'project_env_form': project_env_form}
-            return render(request, 'web/project_env_add_edit.html', context)
-
-        # 添加project_env
         project_env_form = forms.ProjectEnvForm()
-        context = {'project_env_form': project_env_form}
-        return render(request, 'web/project_env_add_edit.html', context)
-
-
+        context = {'form': project_env_form}
+        return render(request, 'web/add_edit_form.html', context)
     else:
-        # 提交编辑
-        if pk:
-            project_env_obj = models.ProjectEnv.objects.filter(pk=pk).first()
-            project_env_form = forms.ProjectEnvForm(instance=project_env_obj, data=request.POST)
-            if project_env_form.is_valid():
-                # FIXME 不能直接保存
-                project_env_form.save()
-                return redirect('web:project_env_list')
-            context = {'project_env_form': project_env_form}
-            return render(request, 'web/project_env_add_edit.html', context)
-
-        # 提交添加
         project_env_form = forms.ProjectEnvForm(data=request.POST)
         if project_env_form.is_valid():
-            # FIXME 不能直接保存
             project_env_form.save()
-            return redirect('web:project_env_list')
-        context = {'project_env_form': project_env_form}
-        return render(request, 'web/project_env_add_edit.html', context)
+            return redirect('web:project_env')
+        context = {'form': project_env_form}
+        return render(request, 'web/add_edit_form.html', context)
+
+
+def project_env_edit(request, pk):
+    if request.method == 'GET':
+        project_env_obj = models.ProjectEnv.objects.filter(pk=pk).first()
+        project_env_form = forms.ProjectEnvForm(instance=project_env_obj)
+        context = {'form': project_env_form}
+        return render(request, 'web/add_edit_form.html', context)
+    else:
+        project_env_obj = models.ProjectEnv.objects.filter(pk=pk).first()
+        project_env_form = forms.ProjectEnvForm(instance=project_env_obj, data=request.POST)
+        if project_env_form.is_valid():
+            project_env_form.save()
+            return redirect('web:project_env')
+        context = {'form': project_env_form}
+        return render(request, 'web/add_edit_form.html', context)
+
+
+def deploy_task(request, env_id):
+    project_env_obj = models.ProjectEnv.objects.filter(pk=env_id).first()
+    deploy_tasks = models.DeployTask.objects.filter(env=project_env_obj)
+
+    context = {'deploy_tasks': deploy_tasks,
+               'project_env_obj': project_env_obj
+               }
+    return render(request, 'web/deploy_task.html', context)
+
+
+def deploy_task_add(request, env_id):
+    env_object = models.ProjectEnv.objects.filter(id=env_id).first()  # 将env_object传给form表单，获取关联表的值
+    if request.method == 'GET':
+        deploy_task_form = forms.DeployTaskForm(env_object)
+        context = {'deploy_task_form': deploy_task_form, 'env_object': env_object}
+        return render(request, 'web/deploy_task_add_edit.html', context)
+    else:
+
+        deploy_task_form = forms.DeployTaskForm(env_object, data=request.POST)
+        if deploy_task_form.is_valid():
+            deploy_task_form.save()
+            return redirect(reverse('web:deploy_task', kwargs={'env_id': env_id}))
+        context = {'form': deploy_task_form,
+                   'env_object':env_object,
+                   }
+        return render(request, 'web/add_edit_form.html', context)
+
+
+def deploy_task_edit(request, pk):
+    if request.method == 'GET':
+        deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+        deploy_task_form = forms.DeployStatusForm(instance=deploy_task_obj)
+        context = {'form': deploy_task_form}
+        return render(request, 'web/add_edit_form.html', context)
+    else:
+        deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+        deploy_task_env = deploy_task_obj.env
+        # FIXME delete this
+        print(deploy_task_env, type(deploy_task_env))
+        deploy_task_form = forms.DeployStatusForm(instance=deploy_task_obj, data=request.POST)
+        if deploy_task_form.is_valid():
+            deploy_task_obj.save(update_fields=['status', ])
+        return redirect(reverse('web:deploy_task', kwargs={'env_id': deploy_task_env.id}))
+
+
+def deploy_task_delete(request, pk):
+    deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+    deploy_task_env = deploy_task_obj.env
+    models.DeployTask.objects.filter(pk=pk).delete()
+    return redirect(reverse('web:deploy_task', kwargs={'env_id': deploy_task_env.id}))
+
+
+from utils import repository
+
+
+def deploy_now(rquest, pk):
+    # pk： task_id
+    deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+    # 获取任务环境
+    task_env = deploy_task_obj.env
+    task_project_repo = task_env.project.repo
+
+    repo_addr = task_project_repo
+    project_name = repo_addr.rsplit('/')[-1].split('.')[0]
+    local_repo_path = os.path.join(settings.LOCAL_REPO_BASE_PATH, project_name)
+    git = GitRepository(local_repo_path, repo_addr)
+
+    abs_file_path = shutil.make_archive(
+        base_name=os.path.join(settings.ZIPREPO_BASE_PATH, project_name),
+        format='zip',
+        root_dir=local_repo_path
+    )
+    # with SSHProxy('127.0.0.1', 2222, 'root', password='zjgisadmin') as ssh:
+    #     ssh.upload(abs_file_path, os.path.join('/opt', project_name + '.zip'))
+    return HttpResponse('hello ')
+
+
+def git_commits(request):
+    response = BaseResponse()
+    try:
+        env_id = request.GET.get('env_id')
+        branch = request.GET.get('branch')
+
+        env_object = models.ProjectEnv.objects.filter(id=env_id).first()
+        repo_url = env_object.project.repo
+        project_name = env_object.project.title
+        local_path = os.path.join(settings.LOCAL_REPO_BASE_PATH, project_name)
+        repo_object = GitRepository(local_path, repo_url)
+
+        # 先切换分支
+        repo_object.change_to_branch(branch)
+        # 获取所有提交记录
+        commit_list = repo_object.commits()
+        response.data = commit_list
+
+    except Exception:
+        response.status = False
+        response.error = '版本获取 失败'
+    return JsonResponse(response.dict)
+
+
+def deploy_by_channel(request, pk):
+    # pk: task_id
+    deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+    deploy_server_list = models.DeployServer.objects.filter(deploy=deploy_task_obj)
+    context = {
+        'deploy_server_list':deploy_server_list,
+    }
+
+    return render(request, 'web/deploy_by_channel.html', context)
+
+

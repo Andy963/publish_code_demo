@@ -9,7 +9,7 @@
 {% block content %}
     <div class="col-md-12">
         <p class="">
-            <a href="{% url 'web:project_add_edit' %}">
+            <a href="{% url 'web:project_add' %}">
                 <button type="button" class="btn btn-primary">添加项目</button>
             </a>
         </p>
@@ -35,7 +35,7 @@
                     <td>{{ project.repo }}</td>
 
                     <td>
-                        <a style="color: #333333;" href="{% url 'web:project_add_edit' project.id %}">
+                        <a style="color: #333333;" href="{% url 'web:project_edit' project.id %}">
                             <i class="fa fa-edit" aria-hidden="true"></i></a>
                         |
                         <a style="color: #d9534f;" href="{% url 'web:project_delete' project.id %}"><i

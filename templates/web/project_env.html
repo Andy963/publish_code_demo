@@ -1,4 +1,5 @@
 {% extends 'web/base.html' %}
+{% load deploy_num %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +10,7 @@
 {% block content %}
     <div class="col-md-12">
         <p class="">
-            <a href="{% url 'web:project_env_add_edit' %}">
+            <a href="{% url 'web:project_env_add' %}">
                 <button type="button" class="btn btn-primary">添加项目环境</button>
             </a>
         </p>
@@ -25,21 +26,24 @@
                 <td class="success">环境</td>
                 <td class="info">路径</td>
                 <td class="success">服务器</td>
+                <td class="info">发布任务</td>
                 <td class="info">操作</td>
             </tr>
             </thead>
             <tbody>
             <tbody>
             {% for project_env in project_envs %}
+                {{ project_env.deploytask_set.count }}
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ project_env.project }}</td>
                     <td>{{ project_env.get_env_display }}</td>
                     <td>{{ project_env.path }}</td>
                     <td>{% for server in project_env.servers.all %}{{ server }}{% endfor %}</td>
-
+                    <td><a href="{% url 'web:deploy_task' project_env.id %}">发布({% un_deploy_num project_env %})</a>
+                    </td>
                     <td>
-                        <a style="color: #333333;" href="{% url 'web:project_env_add_edit' project_env.id %}">
+                        <a style="color: #333333;" href="{% url 'web:project_env_edit' project_env.id %}">
                             <i class="fa fa-edit" aria-hidden="true"></i></a>
                         |
                         <a style="color: #d9534f;" href="{% url 'web:project_env_delete' project_env.id %}"><i

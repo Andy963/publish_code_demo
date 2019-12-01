@@ -17,19 +17,25 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <li><a href="">Home</a></li>
+                <li><a href="{% url 'web:server' %}">server</a></li>
+                <li><a href="{% url 'web:rsa' %}">RSA</a></li>
+                <li><a href="{% url 'web:project' %}">Project</a></li>
+                <li><a href="{% url 'web:project_env' %}">Project Env</a></li>
+{#                <li><a href="{% url 'web:deploy_task' %}">Deploy Task</a></li>#}
             </ul>
         </div><!-- /.navbar-collapse -->
     </div>
 </nav>
-<div class="container">
+<div class="container ">
     <div class="row tip text-center">
         {% block tips %}
             <h3>Code publish</h3>
         {% endblock tips %}
     </div>
-    {% block content %}
+        {% block content %}
 
-    {% endblock content %}
+        {% endblock content %}
+
 
 </div>
 </body>

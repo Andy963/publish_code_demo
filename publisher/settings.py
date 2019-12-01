@@ -122,5 +122,15 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+PER_PAGE_COUNT = 8
+PAGE_NUMBER_SHOW = 7
+
 LOCAL_REPO_BASE_PATH = os.path.join(BASE_DIR, 'local_repo')
 ZIPREPO_BASE_PATH = os.path.join(BASE_DIR, 'zip_repo')
+
+ASGI_APPLICATION = 'publisher.routing.application'
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}

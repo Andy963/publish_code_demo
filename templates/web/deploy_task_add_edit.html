@@ -1,0 +1,105 @@
+{% extends 'web/base.html' %}
+{% load static %}
+{% block custom_css %}
+    <style>
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: black;
+            opacity: 0.3;
+        }
+
+        #loading-icon {
+            width: 100px;
+            height: 30px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: -15px;
+        }
+    </style>
+{% endblock custom_css %}
+{% block content %}
+    <div id="loading" class="loading hidden">
+        <div id="loading-icon">
+            <img src="{% static 'images/loading.gif' %}">
+        </div>
+    </div>
+    <!-- 加载动画-->
+    <label for="id_project">项目名称:</label>
+    <input readonly="readonly" type="text" name="project" maxlength="40" class="form-control" id="id_project"
+           value="{{ env_object.project.title }}">
+    <label for="id_repo">git地址</label>
+    <input readonly="readonly" type="text" name="repo" maxlength="40" class="form-control" id="id_repo"
+           value="{{ env_object.project.repo }}">
+    <label for="id_env">环境:</label>
+    <input readonly="readonly" type="text" name="env" maxlength="40" class="form-control" id="id_env"
+           value="{{ env_object.get_env_display }}">
+    <label for="id_path">线上路径:</label>
+    <input readonly="readonly" type="text" name="path" maxlength="40" class="form-control" id="id_path"
+           value="{{ env_object.path }}">
+    <label for="id_severs">目标服务器:</label>
+{#    <input readonly="readonly" type="text" name="servers" maxlength="40" class="form-control" id="id_servers"#}
+{#           value="{% for server in env_object.servers.all %}{{ server }} {% endfor %}">#}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ deploy_task_form }}
+        <input type="submit" class="btn btn-success" value="'提交">
+    </form>
+
+
+{% endblock content %}
+{% block custom_js %}
+    <script>
+        $(function () {
+            bindChangeEvent();
+        });
+
+        // TODO 如果选择了标签，将branch, commit的选项都重置
+
+        function bindChangeEvent() {
+            $('#id_branch').change(function () {
+                let branch = $(this).val();
+                if (branch) {
+                    $("#loading").removeClass('hidden');
+                    $("#id_commit option:gt(0)").remove(); //每次选择分支时移除commit下大于1的选项，否则更换后不断增多
+                    $.ajax({
+                        url: '/git/commits/',
+                        type: 'get',
+                        dataType: 'JSON', //使接收的数据格式为Json,而不用手动转换
+                        data: {
+                            branch: branch, env_id: "{{ env_object.id}}" // env_id可以从前端 传过来
+                        },
+                        success: function (res) {
+                            if (res.status) {
+                                $.each(res.data, function (index, row) {
+                                    $("#loading").addClass('hidden');
+                                    var $option = $('<option>'); //创建一个jq对象, $option 表示为jq对象
+                                    $option.attr('value', row.commit);
+                                    let message = row.commit + "--提交者：" + row.author;
+                                    $option.text(message);
+                                    $("#id_commit").append($option);
+                                });
+
+                            } else {
+                                // 如果失败了，提示错误信息
+
+                                alert(res.error);
+                            }
+                        },
+                        error: function () {
+                            $("#loading").addClass('hidden');
+
+                        }
+                    })
+                } else {
+                    $("#id_commit option:gt(1)").remove(); // 没有选择分支时把所有commit选项去掉
+                }
+            })
+        }
+    </script>
+{% endblock custom_js %}

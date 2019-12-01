@@ -1,0 +1,65 @@
+{% extends 'web/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deploy Task</title>
+</head>
+<body>
+{% block content %}
+    <div class="col-md-12">
+        <p class="">
+            <a href="{% url 'web:deploy_task_add' project_env_obj.id %}">
+                <button type="button" class="btn btn-primary">添加任务</button>
+            </a>
+        </p>
+        <p>
+        <h3 class="text-center">任务:{{ project_env_obj }}</h3>
+        </p>
+        <table class="table table-bordered table-striped table-hover">
+            <!-- On rows -->
+            <thead>
+            <tr>
+                <td class="success">编号</td>
+                <td class="success">标签</td>
+                <td class="info">状态</td>
+                <td class="success">环境</td>
+
+                <td class="success">上线类型</td>
+                <td class="info">发布</td>
+                <td class="info">操作</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tbody>
+            {% for task in deploy_tasks %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ task.uid }}</td>
+                    <td>{{ task.get_status_display }}</td>
+                    <td>{{ task.env }}</td>
+                    <td>{{ task.get_deploy_type_display }}</td>
+                    <td><a href="{% url 'web:deploy_now' task.id %}">发布</a>&nbsp;|&nbsp;<a
+                            href="{% url 'web:deploy_by_channel' task.id %}">Channel发布</a></td>
+
+                    {#                    <td><input type="button" class="btn btn-success" value="发布"></td>#}
+                    <td>
+                        {% ifequal task.status 1 %}
+                            <a style="color: #333333;" href="{% url 'web:deploy_task_edit' task.id %}">
+                                <i class="fa fa-edit" aria-hidden="true"></i></a>
+                        {% endifequal %}
+                        |
+                        <a style="color: #d9534f;" href="{% url 'web:deploy_task_delete' task.id %}"><i
+                                class="fa fa-trash-o"></i></a>
+
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    <div class="col-md-offset-4">{{ page_html }}</div>
+{% endblock content %}
+</body>
+</html>

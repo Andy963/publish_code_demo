@@ -1,0 +1,39 @@
+{% extends 'web/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deploy Task by channel</title>
+</head>
+<body>
+{% block content %}
+    <h1> Deploy by channel</h1>
+    <input id="start" class="btn btn-success" value="开始"/>
+    <div class="col-md-12">
+
+    </div>
+    <div class="col-md-offset-4">{{ page_html }}</div>
+{% endblock content %}
+</body>
+{% block js %}
+    <script>
+        var ws; //声明ws变量
+        $(function () {
+            $("#start").click(function () {
+                // TODO上线时需要修改
+                ws = new WebSocket('ws://127.0.0.1:8000/deploy/{{ task_id }}/');
+                ws.send(JSON.stringify({'action': 'start'}));
+                ws.onopen = function (event) {
+                    console.log(event.data);
+                };
+                ws.onmessage = function (event) {
+                    console.log(event.data);
+                };
+                ws.onclose = function (event) {
+                    console.log(event.data);
+                };
+            });
+        })
+    </script>
+{% endblock js %}
+</html>

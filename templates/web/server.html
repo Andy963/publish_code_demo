@@ -9,7 +9,7 @@
 {% block content %}
     <div class="col-md-12">
         <p class="">
-            <a href="{% url 'web:server' %}">
+            <a href="{% url 'web:server_add' %}">
                 <button type="button" class="btn btn-primary">添加服务器</button>
             </a>
         </p>
@@ -33,7 +33,7 @@
                     <td>{{ server.hostname }}</td>
 
                     <td>
-                        <a style="color: #333333;" href="{% url 'web:server' server.id %}">
+                        <a style="color: #333333;" href="{% url 'web:server_edit' server.id %}">
                             <i class="fa fa-edit" aria-hidden="true"></i></a>
                         |
                         <a style="color: #d9534f;" href="{% url 'web:server_delete' server.id %}"><i
