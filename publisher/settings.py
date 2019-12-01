@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'apps.web.apps.WebConfig',
+    'channels',
     # 'apps.api.apps.ApiConfig',
 ]
 

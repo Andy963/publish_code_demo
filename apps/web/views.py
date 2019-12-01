@@ -275,7 +275,7 @@ def deploy_task_add(request, env_id):
             deploy_task_form.save()
             return redirect(reverse('web:deploy_task', kwargs={'env_id': env_id}))
         context = {'form': deploy_task_form,
-                   'env_object':env_object,
+                   'env_object': env_object,
                    }
         return render(request, 'web/add_edit_form.html', context)
 
@@ -357,10 +357,11 @@ def deploy_by_channel(request, pk):
     # pk: task_id
     deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
     deploy_server_list = models.DeployServer.objects.filter(deploy=deploy_task_obj)
+    for server in deploy_server_list:
+        print(server)
     context = {
-        'deploy_server_list':deploy_server_list,
+        'deploy_server_list': deploy_server_list,
+        'task_id': pk,
     }
 
     return render(request, 'web/deploy_by_channel.html', context)
-
-

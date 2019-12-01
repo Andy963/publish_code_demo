@@ -7,7 +7,10 @@
 </head>
 <body>
 {% block content %}
-    <h1> Deploy by channel</h1>
+    <h1> Deploy by channel:</h1>
+    <div id="content">
+        <!--返回内容将在这里显示  -->
+    </div>
     <input id="start" class="btn btn-success" value="开始"/>
     <div class="col-md-12">
 
@@ -15,25 +18,28 @@
     <div class="col-md-offset-4">{{ page_html }}</div>
 {% endblock content %}
 </body>
-{% block js %}
+{% block custom_js %}
     <script>
-        var ws; //声明ws变量
+
+        var ws = new WebSocket('ws://127.0.0.1:8000/channel/{{ task_id }}/');
+        ws.onopen = function (event) {
+            $("#content").text('连接成功')
+        };
+        ws.onmessage = function (event) {
+            //# 收到消息时触发
+            let content = $("#content");
+            let tag = document.createElement('div');
+            tag.innerHTML = event.data;
+            content.append(tag);
+        };
+        ws.onclose = function (event) {
+
+        };
         $(function () {
-            $("#start").click(function () {
-                // TODO上线时需要修改
-                ws = new WebSocket('ws://127.0.0.1:8000/deploy/{{ task_id }}/');
+            $('#start').click(function () {
                 ws.send(JSON.stringify({'action': 'start'}));
-                ws.onopen = function (event) {
-                    console.log(event.data);
-                };
-                ws.onmessage = function (event) {
-                    console.log(event.data);
-                };
-                ws.onclose = function (event) {
-                    console.log(event.data);
-                };
             });
         })
     </script>
-{% endblock js %}
+{% endblock custom_js %}
 </html>

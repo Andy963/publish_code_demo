@@ -43,6 +43,7 @@ class SSHProxy(object):
         sftp.put(local_path, remote_path)
         sftp.close()
 
+
     def __enter__(self):
         if self.password:
             self.open_with_password()
@@ -53,8 +54,7 @@ class SSHProxy(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-
 # if __name__ == '__main__':
-    # with SSHProxy('127.0.0.1', 2222, 'root', password='zjgisadmin') as ssh:
-    #     v1 = ssh.command('sudo ifconfig')
-    #     print(v1)
+# with SSHProxy('127.0.0.1', 2222, 'root', password='zjgisadmin') as ssh:
+#     v1 = ssh.command('sudo ifconfig')
+#     print(v1)
