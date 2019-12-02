@@ -8,12 +8,12 @@ from django.utils.safestring import mark_safe
 
 class CustomPage:
 
-    def __init__(self, cur_page_num, total_count, obj_per_page=8, page_tab_num=7, request_data=None):
+    def __init__(self, cur_page_num, total_count, obj_per_page=8, page_btn_num=7, request_data=None):
         """
         :param cur_page_num:   当前页码
         :param total_count:    总数据量
         :param obj_per_page:    每页显示多少条
-        :param page_tab_num:   总共显示多少个页码按钮
+        :param page_btn_num:   总共显示多少个页码按钮
 
         start_page_number:起始页码
         end_page_number:结束页码
@@ -27,7 +27,7 @@ class CustomPage:
             cur_page_num = 1
 
         # 显示的页码按钮中间值
-        half_number = page_tab_num // 2
+        half_number = page_btn_num // 2
 
         # 诸总页码
         temp_count, rest = divmod(total_count, obj_per_page)
@@ -52,13 +52,13 @@ class CustomPage:
 
         if start_page_number <= 0:
             start_page_number = 1
-            end_page_number = page_tab_num + 1  # 7
+            end_page_number = page_btn_num + 1  # 7
 
         if end_page_number >= total_page_count:  # 6 > 2
-            start_page_number = total_page_count - page_tab_num + 1  # -4
+            start_page_number = total_page_count - page_btn_num + 1  # -4
             end_page_number = total_page_count + 1  # 3
 
-        if total_page_count < page_tab_num:
+        if total_page_count < page_btn_num:
             start_page_number = 1
             end_page_number = total_page_count + 1
 
@@ -69,16 +69,16 @@ class CustomPage:
         self.end_page_number = end_page_number
 
     @property
-    def start_data_number(self):
+    def start_page_num(self):
 
         return (self.cur_page_num - 1) * self.obj_per_page
 
     @property
-    def end_data_number(self):
+    def end_page_num(self):
 
         return self.cur_page_num * self.obj_per_page
 
-    def page_html_func(self):
+    def gen_page_html(self):
 
         page_html = """
                            <nav aria-label="Page navigation">

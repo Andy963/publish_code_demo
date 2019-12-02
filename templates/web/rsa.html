@@ -32,7 +32,7 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ rsa.get_status_display }}</td>
-                    <td>{{ rsa.private_key }}</td>
+                    <td class="col-md-8">{{ rsa.private_key }}</td>
 
                     <td>
                         <a style="color: #333333;" href="{% url 'web:rsa_edit' rsa.id %}">

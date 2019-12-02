@@ -37,7 +37,7 @@ class DeployConsumer(WebsocketConsumer):
         if deploy_json.get('action') == 'start':
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': "start"
+                'message': '{"status":200,"msg":"开始...","percent":10}'
             })
 
             deploy_task_obj = models.DeployTask.objects.filter(pk=task_id).first()
@@ -45,25 +45,38 @@ class DeployConsumer(WebsocketConsumer):
             task_env = deploy_task_obj.env
             task_project_repo = task_env.project.repo
 
-            msg = '正在连接到%s' % task_project_repo
+            msg = {
+                "status": 200,
+                "msg": "正在连接到",
+                "percent": 30
+            }
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': msg
+                'message': json.dumps(msg)
             })
 
             repo_addr = task_project_repo
             project_name = repo_addr.rsplit('/')[-1].split('.')[0]
             local_repo_path = os.path.join(settings.LOCAL_REPO_BASE_PATH, project_name)
-            msg = '成功连接，正在拉取代码'
+            msg = {
+                "status": 200,
+                "msg": "正在拉取代码",
+                "percent": 50
+            }
+
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': msg
+                'message': json.dumps(msg)
             })
             git = GitRepository(local_repo_path, repo_addr)
-            msg = '代码拉取成功'
+            msg = {
+                "status": 200,
+                "msg": "拉取成功,正准备打包",
+                "percent": 70
+            }
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': msg
+                'message': json.dumps(msg)
             })
 
             abs_file_path = shutil.make_archive(
@@ -71,30 +84,48 @@ class DeployConsumer(WebsocketConsumer):
                 format='zip',
                 root_dir=local_repo_path
             )
-            msg = '代码打包成功，开始上传'
+            msg = {
+                "status": 200,
+                "msg": "打包成功,开始上传",
+                "percent": 80
+            }
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': msg
+                'message': json.dumps(msg)
             })
 
             BASE_DIR = settings.BASE_DIR
-            msg = '上传成功，开始解压'
+            msg = {
+                "status": 200,
+                "msg": "上传成功, 开始解压",
+                "percent": 90
+            }
             async_to_sync(self.channel_layer.group_send)(task_id, {
                 'type': 'send_message',
-                'message': msg
+                'message': json.dumps(msg)
             })
             private_key_path = os.path.join(BASE_DIR, 'rsa/id_rsa')
             remote_file_path = os.path.join('/opt', project_name + '.zip')
-            print(remote_file_path)
             with SSHProxy('107.174.101.162', 5188, 'root', private_key_path=private_key_path) as ssh:
                 ssh.upload(abs_file_path, remote_file_path)
 
+            msg = {
+                "status": 200,
+                "msg": "解压完成",
+                "percent": 100
+            }
+            async_to_sync(self.channel_layer.group_send)(task_id, {
+                'type': 'send_message',
+                'message': json.dumps(msg)
+            })
+
+        # TODO 发布成功要将task_status 改成发布成功
 
     def send_message(self, event):
         print('发送消息%s' % event['message'])
         message = event['message']
-        time.sleep(3)
         self.send(message)
+        time.sleep(1)
 
     def websocket_disconnect(self, message):
         task_id = self.scope['url_route']['kwargs'].get('task_id')

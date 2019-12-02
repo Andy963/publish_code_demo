@@ -5,7 +5,6 @@ from django.conf.urls import url
 from .views import *
 
 urlpatterns = [
-    url(r'fetch/', fetch, name='fetch'),
     url(r'home', home, name='home'),
 
     url(r'server/list/$', server, name='server'),

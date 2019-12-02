@@ -98,7 +98,7 @@ class DeployServer(models.Model):
     status = models.PositiveSmallIntegerField(verbose_name='状态', choices=status_choices,default=1)
 
     def __str__(self):
-        return self.server
+        return self.server.hostname
 
 
 class DeployServerLog(models.Model):

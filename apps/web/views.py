@@ -1,12 +1,10 @@
 import os
 import copy
 import shutil
-import uuid
 
 from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
-from django.views import View
 
 from utils.repository import GitRepository
 from utils.ssh import SSHProxy
@@ -17,23 +15,6 @@ from utils.response import BaseResponse
 
 
 # Create your views here.
-
-
-def fetch(request):
-    if request.method == 'POST':
-        repo_addr = request.POST.get('repo_addr')
-        project_name = repo_addr.rsplit('/')[-1].split('.')[0]
-        local_repo_path = os.path.join(settings.LOCAL_REPO_BASE_PATH, project_name)
-        git = GitRepository(local_repo_path, repo_addr)
-
-        abs_file_path = shutil.make_archive(
-            base_name=os.path.join(settings.ZIPREPO_BASE_PATH, project_name),
-            format='zip',
-            root_dir=local_repo_path
-        )
-        with SSHProxy('127.0.0.1', 2222, 'root', password='zjgisadmin') as ssh:
-            ssh.upload(abs_file_path, os.path.join('/opt', project_name + '.zip'))
-    return render(request, 'web/index.html')
 
 
 def home(request):
@@ -55,8 +36,8 @@ def rsa(request):
         page_tab_num = settings.PAGE_NUMBER_SHOW
         page_obj = custom_paginator.CustomPage(cur_page_num, total_count, obj_per_page, page_tab_num,
                                                request_data)
-        rsa_list = rsas[page_obj.start_data_number:page_obj.end_data_number]
-        page_html = page_obj.page_html_func()
+        rsa_list = rsas[page_obj.start_page_num:page_obj.end_page_num]
+        page_html = page_obj.gen_page_html()
         context = {
             'rsas': rsa_list,
             'page_html': page_html,
@@ -69,7 +50,7 @@ def rsa(request):
 
 def rsa_delete(request, pk):
     models.Rsa.objects.filter(pk=pk).delete()
-    return redirect('web:rsa_list')
+    return redirect('web:rsa')
 
 
 def rsa_add(request):
@@ -83,7 +64,7 @@ def rsa_add(request):
         rsa_form = forms.RsaForm(data=request.POST)
         if rsa_form.is_valid():
             rsa_form.save()
-            return redirect('web:rsa_list')
+            return redirect('web:rsa')
         context = {'rsa_form': rsa_form}
         return render(request, 'web/rsa_add_edit.html', context)
 
@@ -100,7 +81,7 @@ def rsa_edit(request, pk):
         rsa_form = forms.RsaForm(instance=rsa_obj, data=request.POST)
         if rsa_form.is_valid():
             rsa_form.save()
-            return redirect('web:rsa_list')
+            return redirect('web:rsa')
         context = {'rsa_form': rsa_form}
         return render(request, 'web/rsa_add_edit.html', context)
 
@@ -116,8 +97,8 @@ def server(request):
         page_tab_num = settings.PAGE_NUMBER_SHOW
         page_obj = custom_paginator.CustomPage(cur_page_num, total_count, obj_per_page, page_tab_num,
                                                request_data)
-        servers = servers[page_obj.start_data_number:page_obj.end_data_number]
-        page_html = page_obj.page_html_func()
+        servers = servers[page_obj.start_page_num:page_obj.end_page_num]
+        page_html = page_obj.gen_page_html()
         context = {
             'servers': servers,
             'page_html': page_html,
@@ -130,7 +111,7 @@ def server(request):
 
 def server_delete(request, pk):
     models.Server.objects.filter(pk=pk).delete()
-    return redirect('web:server_list')
+    return redirect('web:server')
 
 
 def server_add(request):
@@ -166,10 +147,24 @@ def server_edit(request, pk):
 
 
 def project(request):
-    projects = models.Project.objects.all()
-    context = {
-        'projects': projects,
-    }
+    try:
+        projects = models.Project.objects.all()
+        request_data = copy.copy(request.GET)
+        cur_page_num = request.GET.get('page')
+        total_count = projects.count()
+        obj_per_page = settings.PER_PAGE_COUNT
+        page_tab_num = settings.PAGE_NUMBER_SHOW
+        page_obj = custom_paginator.CustomPage(
+            cur_page_num, total_count, obj_per_page, page_tab_num, request_data
+        )
+        project_list = projects[page_obj.start_page_num:page_obj.end_page_num]
+        page_html = page_obj.gen_page_html()
+        context = {
+            'projects': project_list,
+            'page_html': page_html
+        }
+    except ConnectionError:
+        return render(request, '404.html')
     return render(request, 'web/project.html', context)
 
 
@@ -211,8 +206,23 @@ def project_edit(request, pk):
 
 
 def project_env(request):
-    project_envs = models.ProjectEnv.objects.all()
-    context = {'project_envs': project_envs}
+    try:
+        project_envs = models.ProjectEnv.objects.all()
+        request_data = copy.copy(request.GET)
+        cur_page_num = request.GET.get('page')
+        total_count = project_envs.count()
+        obj_per_page = settings.PER_PAGE_COUNT
+        page_tab_num = settings.PAGE_NUMBER_SHOW
+        page_obj = custom_paginator.CustomPage(cur_page_num,
+                                               total_count,
+                                               obj_per_page,
+                                               page_tab_num,
+                                               request_data)
+        project_env_list = project_envs[page_obj.start_page_num:page_obj.end_page_num]
+        page_html = page_obj.gen_page_html()
+        context = {'project_envs': project_env_list, 'page_html': page_html}
+    except ConnectionError:
+        return render(request, '404.html')
     return render(request, 'web/project_env.html', context)
 
 
@@ -304,9 +314,6 @@ def deploy_task_delete(request, pk):
     return redirect(reverse('web:deploy_task', kwargs={'env_id': deploy_task_env.id}))
 
 
-from utils import repository
-
-
 def deploy_now(rquest, pk):
     # pk： task_id
     deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
@@ -324,12 +331,14 @@ def deploy_now(rquest, pk):
         format='zip',
         root_dir=local_repo_path
     )
+    #TODO 完成上传，解压
     # with SSHProxy('127.0.0.1', 2222, 'root', password='zjgisadmin') as ssh:
     #     ssh.upload(abs_file_path, os.path.join('/opt', project_name + '.zip'))
     return HttpResponse('hello ')
 
 
 def git_commits(request):
+    # 获取提交记录
     response = BaseResponse()
     try:
         env_id = request.GET.get('env_id')
@@ -356,9 +365,9 @@ def git_commits(request):
 def deploy_by_channel(request, pk):
     # pk: task_id
     deploy_task_obj = models.DeployTask.objects.filter(pk=pk).first()
+    deploy_task_obj.status = 2
+    deploy_task_obj.save()
     deploy_server_list = models.DeployServer.objects.filter(deploy=deploy_task_obj)
-    for server in deploy_server_list:
-        print(server)
     context = {
         'deploy_server_list': deploy_server_list,
         'task_id': pk,

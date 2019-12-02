@@ -1,4 +1,5 @@
 {% extends 'web/base.html' %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,14 +8,23 @@
 </head>
 <body>
 {% block content %}
-    <h1> Deploy by channel:</h1>
-    <div id="content">
+    <input id="start" class="btn btn-sm btn-success" value="开始部署"/><p id="connect_status"></p>
+    </br>
+    <div id="content" class=" col-md-3" style="border:1px dashed cadetblue;min-height: 160px;border-radius: 10px;">
         <!--返回内容将在这里显示  -->
     </div>
-    <input id="start" class="btn btn-success" value="开始"/>
-    <div class="col-md-12">
-
-    </div>
+    {% for server in deploy_server_list %}
+        <div class="col-md-8 col-md-offset-1" style="border: 1px dashed cadetblue ;min-height:160px;border-radius: 10px;">
+            <img width="100px" height="100px" src="{% static 'images/server.jpg' %}">
+            {{ server }}
+            <div class="progress">
+                <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="" aria-valuemin="0"
+                     aria-valuemax="100"
+                     style="">
+                </div>
+            </div>
+        </div>
+    {% endfor %}
     <div class="col-md-offset-4">{{ page_html }}</div>
 {% endblock content %}
 </body>
@@ -23,18 +33,29 @@
 
         var ws = new WebSocket('ws://127.0.0.1:8000/channel/{{ task_id }}/');
         ws.onopen = function (event) {
-            $("#content").text('连接成功')
+            $("#connect_status").text('连接成功');
         };
         ws.onmessage = function (event) {
             //# 收到消息时触发
             let content = $("#content");
             let tag = document.createElement('div');
-            tag.innerHTML = event.data;
+            let data = JSON.parse(event.data);
+            status = data['status'];
+            let msg = data['msg'];
+            let percent = data['percent'];
+
+            tag.innerHTML = '<span style="color:green;">' + status + '</span>' + ':' + msg;
             content.append(tag);
+            $("#progress").attr('aria-valuenow', percent);
+            let style = 'width:' + percent + '%';
+            $("#progress").attr('style', style);
+
+            $("#progress").text(percent + '%');
         };
         ws.onclose = function (event) {
-
-        };
+            $("#connect_status").text('断开连接');
+            $("#content div").remove();
+        }
         $(function () {
             $('#start').click(function () {
                 ws.send(JSON.stringify({'action': 'start'}));
