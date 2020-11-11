@@ -91,9 +91,10 @@ class DeployServer(models.Model):
     deploy = models.ForeignKey(verbose_name='部署', to='DeployTask')
     server = models.ForeignKey(verbose_name='服务器', to='Server')
     status_choices = (
-        (1, '发布中'),
-        (2, '失败'),
-        (3, '成功'),
+        (1, '待发布'),
+        (2, '发布中'),
+        (3, '失败'),
+        (4, '成功'),
     )
     status = models.PositiveSmallIntegerField(verbose_name='状态', choices=status_choices,default=1)
 
@@ -101,10 +102,16 @@ class DeployServer(models.Model):
         return self.server.hostname
 
 
-class DeployServerLog(models.Model):
-    # 上线服务器记录
-    deploy_server = models.ForeignKey(verbose_name='上线服务器', to='DeployServer')
-    log = models.TextField(verbose_name='日志')
-
-    def __str__(self):
-        return self.deploy_server
+class Diagram(models.Model):
+    """发布图标"""
+    task = models.ForeignKey(verbose_name='发布任务', to='DeployTask')
+    text = models.CharField(verbose_name='文本', max_length=32)
+    status_choices = (
+        ('gray', '待执行'),
+        ('green', '成功'),
+        ('red', '失败'),
+    )
+    status = models.CharField(verbose_name='状态', max_length=32, choices=status_choices, default='gray')
+    parent = models.ForeignKey(verbose_name='父节点', to='self', null=True, blank=True)
+    deploy_record = models.ForeignKey(verbose_name='服务器发布记录', to='DeployServer', null=True, blank=True)
+    log = models.TextField(verbose_name='日志', null=True, blank=True)

@@ -127,7 +127,8 @@ class DeployConsumer(WebsocketConsumer):
         self.send(message)
         time.sleep(1)
 
+    # websocket_disconnect 使用时用.
     def websocket_disconnect(self, message):
         task_id = self.scope['url_route']['kwargs'].get('task_id')
         async_to_sync(self.channel_layer.group_discard)(task_id, self.channel_name)
-        raise StopConsumer()
+        raise StopConsumer() # 服务端主动断开连接

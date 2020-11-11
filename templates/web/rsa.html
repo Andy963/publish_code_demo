@@ -7,7 +7,7 @@
 </head>
 <body>
 {% block content %}
-    <div class="col-md-12">
+    <div class="col-md-12" style="min-height: 500px;">
         <p class="">
             <a href="{% url 'web:rsa_add' %}">
                 <button type="button" class="btn btn-primary">添加密钥</button>
@@ -32,7 +32,7 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ rsa.get_status_display }}</td>
-                    <td class="col-md-8">{{ rsa.private_key }}</td>
+                    <td class="col-md-8">{{ rsa.private_key|truncatechars:20 }}</td>
 
                     <td>
                         <a style="color: #333333;" href="{% url 'web:rsa_edit' rsa.id %}">

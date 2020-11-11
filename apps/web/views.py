@@ -374,3 +374,4 @@ def deploy_by_channel(request, pk):
     }
 
     return render(request, 'web/deploy_by_channel.html', context)
+
